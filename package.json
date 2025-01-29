@@ -14,7 +14,7 @@
   },
   "devDependencies": {},
   "engines": {
-    "node": "22.x"
+    "node": "22.x"   // Vercel ko Node.js version 22.x use karne ke liye batana
   },
   "author": "",
   "license": "ISC"
