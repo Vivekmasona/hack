@@ -8,7 +8,18 @@
   ],
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "/receive",
+      "methods": ["POST"],
+      "dest": "/index.js"
+    },
+    {
+      "src": "/view",
+      "methods": ["GET"],
+      "dest": "/index.js"
+    },
+    {
+      "src": "/clear",
+      "methods": ["DELETE"],
       "dest": "/index.js"
     }
   ]
