@@ -1,41 +1,40 @@
-import express from 'express';
-import puppeteer from 'puppeteer-core';
-import chrome from 'chrome-aws-lambda';
-
+const express = require('express');
+const fs = require('fs');
 const app = express();
-const port = process.env.PORT || 3000;
 
-app.get('/extract-links', async (req, res) => {
-    const { url } = req.query;
+app.use(express.json());
 
-    if (!url || typeof url !== 'string') {
-        return res.status(400).json({ error: 'A valid URL is required' });
-    }
+// Data storage
+const DATA_FILE = 'data.json';
 
-    try {
-        // Launch Puppeteer using chrome-aws-lambda
-        const browser = await puppeteer.launch({
-            executablePath: await chrome.executablePath,
-            args: chrome.args,
-            headless: chrome.headless,
-        });
+// POST endpoint to save data
+app.post('/receive', (req, res) => {
+    const { url, title, thumbnail } = req.body;
 
-        const page = await browser.newPage();
-        await page.goto(url, { waitUntil: 'networkidle0' });
+    if (url && title) {
+        const newData = { url, title, thumbnail };
 
-        // Extract all links
-        const links = await page.evaluate(() => {
-            return Array.from(document.querySelectorAll('a')).map(a => a.href);
-        });
+        // Save data to JSON file
+        const existingData = fs.existsSync(DATA_FILE)
+            ? JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'))
+            : [];
+        existingData.push(newData);
+        fs.writeFileSync(DATA_FILE, JSON.stringify(existingData, null, 2));
 
-        await browser.close();
-
-        res.json({ url, links });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch webpage', details: error.message });
+        res.status(200).json({ message: 'Data received successfully', data: newData });
+    } else {
+        res.status(400).json({ error: 'Missing required fields' });
     }
 });
 
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+// GET endpoint to view saved data
+app.get('/view', (req, res) => {
+    if (fs.existsSync(DATA_FILE)) {
+        const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+        res.status(200).json(data);
+    } else {
+        res.status(404).json({ error: 'No data found' });
+    }
 });
+
+module.exports = app;
